@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives.{complete, options, respondWithHeaders, _}
 import akka.http.scaladsl.server.Route
 
-trait Cors {
+trait CorsRoutes {
 
   private val corsResponseHeaders = List(
     `Access-Control-Allow-Origin`.*,

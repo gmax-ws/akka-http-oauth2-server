@@ -1,4 +1,4 @@
-package ws.gmax.jwt
+package ws.gmax.oauth
 
 import akka.http.scaladsl.model.StatusCodes._
 import com.typesafe.config.Config
@@ -12,34 +12,33 @@ class JwtToken(config: Config) extends LazyLogging {
 
   import ws.gmax.routes.OAuth2Protocol._
 
-  val sessions = scala.collection.mutable.Map[String, AuthorizationMessage]()
+  private val sessions = scala.collection.mutable.Map[String, AuthorizationMessage]()
 
-  val privateKey = config.getString("oauth2.privateKey")
+  private val privateKey = config.getString("oauth2.privateKey")
   val publicKey = config.getString("oauth2.publicKey")
-  val iss = config.getString("oauth2.iss")
+  private val iss = config.getString("oauth2.iss")
 
-  val applicationId = config.getString("oauth2.applicationId")
-  val expireIn = config.getLong("oauth2.expireIn")
+  private val applicationId = config.getString("oauth2.applicationId")
+  private val expireIn = config.getLong("oauth2.expireIn")
 
-  val tokenType = config.getString("oauth2.tokenType")
-  val realm = config.getString("oauth2.realm")
-  val scopes = config.getStringList("oauth2.scopes")
+  private val tokenType = config.getString("oauth2.tokenType")
+  private val realm = config.getString("oauth2.realm")
+  private val scopes = config.getStringList("oauth2.scopes")
 
-  def authenticateClient(clientId: String, clientSecret: String) =
+  private def authenticateClient(clientId: String, clientSecret: String) =
     clientId == "system" && clientSecret == "manager"
 
-  def authenticateUser(username: String, password: String) =
+  private def authenticateUser(username: String, password: String) =
     username == "client" && password == "secret"
 
-  def checkScopes(reqScopes: Set[String]) =
+  private def checkScopes(reqScopes: Set[String]) =
     reqScopes forall (scopes.contains(_))
 
-  def clientRoles(reqScopes: Set[String]) =
-    reqScopes map {
-      case "read" => "ROLE_READ"
-      case "write" => "ROLE_WRITE"
-      case "admin" => "ROLE_ADMIN"
-    }
+  private def clientRoles(reqScopes: Set[String]) = reqScopes map {
+    case "read" => "ROLE_READ"
+    case "write" => "ROLE_WRITE"
+    case "admin" => "ROLE_ADMIN"
+  }
 
   private def jwt(about: String, to: String, roles: Set[String]) = {
     val claim = JwtClaim()
@@ -52,7 +51,7 @@ class JwtToken(config: Config) extends LazyLogging {
     Jwt.encode(claim, privateKey, JwtAlgorithm.RS256)
   }
 
-  def makeJwtToken(grantType: String, clientId: String, scope: String): Either[AccessTokenError, AccessToken] = {
+  private def makeJwtToken(grantType: String, clientId: String, scope: String): Either[AccessTokenError, AccessToken] = {
     val reqScopes = scope.split(" ").toSet
     if (checkScopes(reqScopes)) {
       val token = jwt(grantType, clientId, clientRoles(reqScopes))
@@ -62,7 +61,7 @@ class JwtToken(config: Config) extends LazyLogging {
     }
   }
 
-  def makeToken(request: AuthorizationCodeMessage) = {
+  private def makeToken(request: AuthorizationCodeMessage) = {
     sessions.get(request.code) match {
       case Some(data) =>
         sessions.remove(request.code)
@@ -76,14 +75,10 @@ class JwtToken(config: Config) extends LazyLogging {
     }
   }
 
-  def makeToken(request: AuthorizationMessage) =
-    makeJwtToken(request.responseType, request.clientId, request.scope)
-
-  def clientCredentialsGrant(request: ClientCredentialsMessage) = {
+  private def clientCredentialsGrant(request: ClientCredentialsMessage) = {
     if (authenticateClient(request.clientId, request.clientSecret)) {
       request.grantType match {
-        case "client_credentials" =>
-          makeJwtToken(request.grantType, request.clientId, request.scope)
+        case "client_credentials" => makeJwtToken(request.grantType, request.clientId, request.scope)
         case _ => Left(AccessTokenError(BadRequest, s"Invalid grant type: ${request.grantType}"))
       }
     } else {
@@ -91,7 +86,7 @@ class JwtToken(config: Config) extends LazyLogging {
     }
   }
 
-  def userCredentialsGrant(request: UserCredentialsMessage) = {
+  private def userCredentialsGrant(request: UserCredentialsMessage) = {
     if (authenticateClient(request.clientId, request.clientSecret)) {
       request.grantType match {
         case "password" =>
@@ -107,7 +102,7 @@ class JwtToken(config: Config) extends LazyLogging {
     }
   }
 
-  def authorizationCodeGrant1(request: AuthorizationMessage) = {
+  private def authorizationCodeGrant1(request: AuthorizationMessage) = {
     if (request.responseType == "code") {
       val reqScopes = request.scope.split(" ").toSet
       if (checkScopes(reqScopes)) {
@@ -124,11 +119,10 @@ class JwtToken(config: Config) extends LazyLogging {
     }
   }
 
-  def authorizationCodeGrant(request: AuthorizationCodeMessage) = {
+  private def authorizationCodeGrant(request: AuthorizationCodeMessage) = {
     if (authenticateClient(request.clientId, request.clientSecret)) {
       request.grantType match {
-        case "authorization_code" =>
-          makeToken(request)
+        case "authorization_code" => makeToken(request)
         case _ => Left(AccessTokenError(BadRequest, s"Invalid grant type: ${request.grantType}"))
       }
     } else {
@@ -143,19 +137,17 @@ class JwtToken(config: Config) extends LazyLogging {
     case request: AuthorizationMessage => authorizationCodeGrant1(request)
   }
 
-  def verifyToken(token: String, secret: String) =
+  def verifyToken(token: String, secret: String): Either[Throwable, AuthInfo] =
     Jwt.decode(token, secret, Seq(JwtAlgorithm.RS256)).map { decodedJson =>
       logger.info(s"Decoded json token $decodedJson")
       decodedJson.parseJson.convertTo[AuthInfo]
     }.toEither
 
-  def validate(token: String) = {
+  def validate(token: String): Either[Throwable, AuthInfo] =
     verifyToken(token, publicKey)
-  }
 
-  def pemKeys() = {
-    PemKeys(Pem.getPem(true), Pem.getPem(false))
-  }
+  def pemKeys(): PemKeys =
+    PemKeys(Pem.getPem(), Pem.getPem(false))
 }
 
 object JwtToken {

@@ -1,11 +1,11 @@
-package ws.gmax.jwt
+package ws.gmax.oauth
 
 import java.security._
 
 import com.google.common.base.Splitter
 import org.bouncycastle.util.encoders.Base64
 
-trait KeyGenerator {
+trait OAuth2KeyGenerator {
   private val keyGen: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
 
   private val random: SecureRandom = SecureRandom.getInstance("SHA1PRNG", "SUN")
@@ -16,7 +16,7 @@ trait KeyGenerator {
   protected val publicKey: PublicKey = pair.getPublic
 }
 
-object Pem extends KeyGenerator {
+object Pem extends OAuth2KeyGenerator {
   private val begPrivate = "-----BEGIN PRIVATE KEY-----\n"
   private val endPrivate = "-----END PRIVATE KEY-----\n"
 

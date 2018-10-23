@@ -1,10 +1,10 @@
 package ws.gmax.actor
 
 import akka.actor.{Actor, ActorLogging}
-import ws.gmax.jwt.JwtToken
+import ws.gmax.oauth.JwtToken
 import ws.gmax.model._
 
-class JwtActor extends Actor with ActorLogging {
+class OAuth2Actor extends Actor with ActorLogging {
 
   val jwt = JwtToken(context.system.settings.config)
 

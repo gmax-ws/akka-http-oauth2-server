@@ -16,8 +16,8 @@ import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import ws.gmax.Global._
-import ws.gmax.actor.JwtSupervisorActor
-import ws.gmax.cors.Cors
+import ws.gmax.actor.OAuth2SupervisorActor
+import ws.gmax.cors.CorsRoutes
 import ws.gmax.service.OAuth2Service
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -44,7 +44,6 @@ trait ResponseJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
 
 /** Global exception handler */
 sealed trait ExceptionHandling extends ResponseJsonProtocol {
-
   val exceptionHandler = ExceptionHandler {
     case th: Throwable => complete((InternalServerError, SimpleResponse(th.getMessage)))
   }
@@ -73,7 +72,7 @@ sealed trait RejectionHandling extends ResponseJsonProtocol {
     .result()
 }
 
-sealed trait AppTrait extends ExceptionHandling with RejectionHandling with Cors with LazyLogging {
+sealed trait AppTrait extends ExceptionHandling with RejectionHandling with CorsRoutes with LazyLogging {
 
   def shutdownAndExit(code: Int): Unit = {
     system.terminate()
@@ -99,12 +98,12 @@ sealed trait AppTrait extends ExceptionHandling with RejectionHandling with Cors
 
   def startupApp(): Unit = {
     /** Create other actors */
-    val jwtSupervisorActor: ActorRef = system.actorOf(JwtSupervisorActor(),
-      "jwtSupervisorActor")
+    val oauth2SupervisorActor: ActorRef = system.actorOf(OAuth2SupervisorActor(),
+      "oauth2SupervisorActor")
 
-    val services = OAuth2Service(jwtSupervisorActor)
+    val services = OAuth2Service(oauth2SupervisorActor)
 
-    /** routes */
+    /** Routes */
     val routes: Route = handleExceptions(exceptionHandler) {
       withCorsHandler(withCorsFilter) {
         pathPrefix(system.name) {

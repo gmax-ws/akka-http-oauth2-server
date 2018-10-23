@@ -19,6 +19,9 @@ val jwtVersion = "0.18.0"
 val slickVersion = "3.2.3"
 val c3p0Version = "0.9.1.2"
 val h2DbVersion = "1.4.197"
+val commonsVersion = "3.8.1"
+val jodaVersion  = "2.10"
+val guavaVersion = "26.0-jre"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
@@ -28,14 +31,14 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion,
   "com.pauldijou" %% "jwt-core" % jwtVersion,
-  "joda-time" % "joda-time" % "2.10",
-  "com.google.guava" % "guava" % "26.0-jre",
+  "joda-time" % "joda-time" % jodaVersion,
+  "com.google.guava" % "guava" % guavaVersion,
   "com.typesafe.slick" %% "slick" % slickVersion,
   "c3p0" % "c3p0" % c3p0Version,
   "com.h2database" % "h2" % h2DbVersion,
-  "org.apache.commons" % "commons-lang3" % "3.8.1",
+  "org.apache.commons" % "commons-lang3" % commonsVersion,
 
-"org.scalatest" %% "scalatest" % scalaTestVersion % Test,
+  "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,

@@ -3,29 +3,29 @@ package ws.gmax.actor
 import akka.actor.{ActorRef, DeadLetter, Props, Terminated}
 import ws.gmax.model._
 
-class JwtSupervisorActor() extends AbstractSupervisorActor {
+class OAuth2SupervisorActor() extends AbstractSupervisorActor {
 
-  val jwtActor: ActorRef = context.actorOf(Props[JwtActor], "jwtActor")
+  val oauth2Actor: ActorRef = context.actorOf(Props[OAuth2Actor], "oauth2Actor")
 
   override def preStart(): Unit = {
     super.preStart()
-    log.info("JWT supervisor is up")
-    context.watch(jwtActor)
+    log.info("OAuth2 supervisor is up")
+    context.watch(oauth2Actor)
   }
 
   override def postStop(): Unit = {
-    log.info("JWT supervisor is down")
+    log.info("OAuth2 supervisor is down")
     super.postStop()
   }
 
   override def receive: Receive = {
-    case message: OAuth2Message => jwtActor forward message
-      
-    case message: VerifyTokenMessage => jwtActor forward message
+    case message: OAuth2Message => oauth2Actor forward message
 
-    case message: GenerateKeyPair.type => jwtActor forward message
+    case message: VerifyTokenMessage => oauth2Actor forward message
 
-    case message: PublicKeyMessage.type => jwtActor forward message
+    case message: GenerateKeyPair.type => oauth2Actor forward message
+
+    case message: PublicKeyMessage.type => oauth2Actor forward message
 
     case DeadLetter(message, sender, recipient) =>
       log.warning(s"The $recipient is not able to process message $message received from $sender")
@@ -40,6 +40,6 @@ class JwtSupervisorActor() extends AbstractSupervisorActor {
   }
 }
 
-object JwtSupervisorActor {
-  def apply(): Props = Props(new JwtSupervisorActor())
+object OAuth2SupervisorActor {
+  def apply(): Props = Props(new OAuth2SupervisorActor())
 }
