@@ -1,11 +1,12 @@
 package ws.gmax.actor
 
 import akka.actor.{ActorRef, DeadLetter, Props, Terminated}
+import akka.routing.FromConfig
 import ws.gmax.model._
 
 class OAuth2SupervisorActor() extends AbstractSupervisorActor {
 
-  val oauth2Actor: ActorRef = context.actorOf(Props[OAuth2Actor], "oauth2Actor")
+  val oauth2Actor: ActorRef = context.actorOf(FromConfig.props(Props[OAuth2Actor]), "oauth2Actor")
 
   override def preStart(): Unit = {
     super.preStart()
