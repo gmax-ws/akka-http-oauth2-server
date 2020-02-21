@@ -1,42 +1,24 @@
 package ws.gmax
 
-import java.util.concurrent.TimeUnit
-
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorRef
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.ActorMaterializer
-import akka.util.Timeout
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
-import ws.gmax.Global._
 import ws.gmax.actor.OAuth2SupervisorActor
 import ws.gmax.cors.CorsRoutes
 import ws.gmax.service.OAuth2Service
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 import scala.io.StdIn
 
-/** Global settings */
-object Global {
-  implicit val system: ActorSystem = ActorSystem("oauth2")
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
-  implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
-
-  implicit val config: Config = system.settings.config
-  val port: Int = config.getInt("app.http-port")
-  val withCorsFilter: Boolean = config.getBoolean("app.withCorsFilter")
-}
-
 final case class SimpleResponse(message: String, timestamp: String =
-  ISODateTimeFormat.dateTime().print(new DateTime()))
+ISODateTimeFormat.dateTime().print(new DateTime()))
 
 trait ResponseJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val simpleResponseFormat: RootJsonFormat[SimpleResponse] = jsonFormat2(SimpleResponse)
@@ -80,8 +62,8 @@ sealed trait AppTrait extends ExceptionHandling with RejectionHandling with Cors
   }
 
   def startHttpServer(routes: Route): Future[Http.ServerBinding] = {
-    val httpServer = Http().bindAndHandle(routes, "0.0.0.0", Global.port)
-    println(s"HTTP server is ready http://localhost:${Global.port}/${system.name}/")
+    val httpServer = Http().bindAndHandle(routes, "0.0.0.0", port)
+    println(s"HTTP server is ready http://localhost:${port}/${system.name}/")
     print("Press RETURN to stop...")
     httpServer
   }
@@ -91,9 +73,9 @@ sealed trait AppTrait extends ExceptionHandling with RejectionHandling with Cors
     httpServer
       .flatMap(_.unbind()) // trigger unbinding from the port
       .onComplete { _ ⇒
-      println("HTTP server is down")
-      shutdownAndExit(0)
-    }
+        println("HTTP server is down")
+        shutdownAndExit(0)
+      }
   }
 
   def startupApp(): Unit = {

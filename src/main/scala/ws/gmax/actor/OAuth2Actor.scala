@@ -6,12 +6,12 @@ import ws.gmax.model._
 
 class OAuth2Actor extends Actor with ActorLogging {
 
-  val jwt = JwtToken(context.system.settings.config)
+  val jwt: JwtToken = JwtToken(context.system.settings.config)
 
   override def receive: Receive = {
     case request: OAuth2Message => sender ! jwt.issue(request)
     case VerifyTokenMessage(token) => sender ! jwt.validate(token)
     case GenerateKeyPair => sender ! jwt.pemKeys()
-    case PublicKeyMessage => sender ! jwt.publicKey
+    case PublicKeyMessage => sender ! jwt.getPublicKey
   }
 }

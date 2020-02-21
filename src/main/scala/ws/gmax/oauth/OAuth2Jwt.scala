@@ -15,7 +15,7 @@ class JwtToken(config: Config) extends LazyLogging {
   private val sessions = scala.collection.mutable.Map[String, AuthorizationMessage]()
 
   private val privateKey = config.getString("oauth2.privateKey")
-  val publicKey = config.getString("oauth2.publicKey")
+  private val publicKey = config.getString("oauth2.publicKey")
   private val iss = config.getString("oauth2.iss")
 
   private val applicationId = config.getString("oauth2.applicationId")
@@ -148,6 +148,8 @@ class JwtToken(config: Config) extends LazyLogging {
 
   def pemKeys(): PemKeys =
     PemKeys(Pem.getPem(), Pem.getPem(false))
+
+  def getPublicKey: String = publicKey
 }
 
 object JwtToken {
