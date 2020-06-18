@@ -2,37 +2,31 @@ package ws.gmax
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.typesafe.scalalogging.LazyLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import ws.gmax.actor.OAuth2SupervisorActor
-import ws.gmax.cors.CorsRoutes
+import ws.gmax.routes.{CorsRoutes, _}
 import ws.gmax.service.OAuth2Service
 
 import scala.concurrent.Future
 import scala.io.StdIn
 
 final case class SimpleResponse(message: String, timestamp: String =
-ISODateTimeFormat.dateTime().print(new DateTime()))
-
-trait ResponseJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val simpleResponseFormat: RootJsonFormat[SimpleResponse] = jsonFormat2(SimpleResponse)
-}
+  ISODateTimeFormat.dateTime().print(new DateTime()))
 
 /** Global exception handler */
-sealed trait ExceptionHandling extends ResponseJsonProtocol {
-  val exceptionHandler = ExceptionHandler {
+sealed trait ExceptionHandling {
+  val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case th: Throwable => complete((InternalServerError, SimpleResponse(th.getMessage)))
   }
 }
 
 /** Global rejection handler */
-sealed trait RejectionHandling extends ResponseJsonProtocol {
+sealed trait RejectionHandling {
 
   implicit def rejectionHandler: RejectionHandler = RejectionHandler.newBuilder()
     .handle { case MissingCookieRejection(cookieName) =>
@@ -58,12 +52,12 @@ sealed trait AppTrait extends ExceptionHandling with RejectionHandling with Cors
 
   def shutdownAndExit(code: Int): Unit = {
     system.terminate()
-    System.exit(1)
+    System.exit(code)
   }
 
   def startHttpServer(routes: Route): Future[Http.ServerBinding] = {
     val httpServer = Http().bindAndHandle(routes, "0.0.0.0", port)
-    println(s"HTTP server is ready http://localhost:${port}/${system.name}/")
+    println(s"HTTP server is ready http://localhost:$port/${system.name}/")
     print("Press RETURN to stop...")
     httpServer
   }

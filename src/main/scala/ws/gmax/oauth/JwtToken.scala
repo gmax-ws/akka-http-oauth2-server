@@ -7,10 +7,9 @@ import org.apache.commons.lang3.RandomStringUtils
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
 import spray.json._
 import ws.gmax.model._
+import ws.gmax.routes._
 
 class JwtToken(config: Config) extends LazyLogging {
-
-  import ws.gmax.routes.OAuth2Protocol._
 
   private val sessions = scala.collection.mutable.Map[String, AuthorizationMessage]()
 
@@ -153,5 +152,5 @@ class JwtToken(config: Config) extends LazyLogging {
 }
 
 object JwtToken {
-  def apply(config: Config): JwtToken = new JwtToken(config)
+  def apply(implicit config: Config): JwtToken = new JwtToken(config)
 }

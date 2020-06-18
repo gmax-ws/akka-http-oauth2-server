@@ -1,4 +1,4 @@
-package ws.gmax.cors
+package ws.gmax.routes
 
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.StatusCodes.NoContent

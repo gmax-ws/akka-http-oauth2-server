@@ -1,26 +1,15 @@
 package ws.gmax.routes
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import ws.gmax.model._
 import ws.gmax.service.OAuth2Service
 
 import scala.util.{Failure, Success}
 
-object OAuth2Protocol extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val pemKeysFormat: RootJsonFormat[PemKeys] = jsonFormat2(PemKeys)
-  implicit val accessTokenFormat: RootJsonFormat[AccessToken] = jsonFormat4(AccessToken)
-  implicit val errorFormat: RootJsonFormat[OAuth2Error] = jsonFormat1(OAuth2Error)
-  implicit val authInfoFormat: RootJsonFormat[AuthInfo] = jsonFormat3(AuthInfo)
-}
-
 trait OAuth2Routes {
   self: OAuth2Service =>
-
-  import ws.gmax.routes.OAuth2Protocol._
 
   private def redirectUser(request: AuthorizationMessage, code: AccessCode) = {
     val uri = s"${request.redirectUri}?code=${code.code}&state=${request.state}"
